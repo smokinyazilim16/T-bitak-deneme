@@ -1,2 +1,203 @@
-# T-bitak-deneme
-Amacımız matematik ispatları ya da sorularından oluşan bir site yaparak insanlara matematiği sevdirmek
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8" />
+  <title>İç Açıortay Teoremi İspatı</title>
+  <style>
+    body { font-family: Arial, sans-serif; text-align: center; margin: 20px; }
+    canvas { border: 1px solid #ccc; margin-top: 12px; cursor: crosshair; }
+    button { margin: 8px; padding: 8px 12px; font-size: 15px; cursor: pointer; }
+    #puan { font-weight: bold; color: darkblue; }
+    #mesaj { margin-top: 8px; min-height: 20px; }
+  </style>
+</head>
+<body>
+
+  <h1>İç Açıortay Teoremi İspatı</h1>
+  <p>Puanınız: <span id="puan">100</span></p>
+
+  <button onclick="dogruCevap()">Cevabı Buldum!</button>
+  <button onclick="ipucu()">İpucu Al</button>
+  <button onclick="videoCozum()">Video Çözüm İzle</button>
+  <button onclick="sifirla()">Sıfırla</button>
+
+  <p id="mesaj"></p>
+
+  <canvas id="cizim" width="600" height="420"></canvas>
+
+  <script>
+    // ---------- PUAN SİSTEMİ ----------
+    let puan = 100;
+    function guncellePuan(){ document.getElementById("puan").innerText = puan; }
+
+    function dogruCevap(){
+      document.getElementById("mesaj").innerText = "Doğru! Oran: AB/AC = DB/DC 🎉";
+    }
+    function ipucu(){
+      if(puan>0){ puan -= 30; guncellePuan();
+        document.getElementById("mesaj").innerText = "D noktasından doğru indirerek hipotenüsü AB çizgisine paralel bir DKC üçgeni çiziniz.";
+      }
+    }
+    function videoCozum(){
+      puan = 0; guncellePuan();
+      window.open("https://www.youtube.com/watch?v=J3ytn05pnwo", "_blank");
+    }
+    function sifirla(){
+      puan = 100; guncellePuan();
+      document.getElementById("mesaj").innerText = "";
+      drawAll(); // çizimi resetle
+    }
+
+    // ---------- ÇİZİM ----------
+    const canvas = document.getElementById("cizim");
+    const ctx = canvas.getContext("2d");
+    ctx.font = "14px Arial";
+
+    const A = {x: 300, y: 80};
+    const B = {x: 120, y: 320};
+    const C = {x: 520, y: 320};
+    const D = {x: 320, y: 320};
+
+    function angleOf(p, q){ return Math.atan2(q.y - p.y, q.x - p.x); }
+
+    function drawAngleArc(center, startA, endA, radius, options = {}){
+      const {strokeStyle = "orange", lineWidth = 3, drawDot = false} = options;
+      let a1 = startA % (2*Math.PI); if(a1<0) a1+=2*Math.PI;
+      let a2 = endA % (2*Math.PI); if(a2<0) a2+=2*Math.PI;
+      let diff = a2 - a1;
+      if(diff <= -Math.PI) diff += 2*Math.PI;
+      else if(diff > Math.PI) diff -= 2*Math.PI;
+      const shortStart = a1;
+      const shortEnd = a1 + diff;
+
+      ctx.beginPath();
+      ctx.arc(center.x, center.y, radius, shortStart, shortEnd, diff < 0);
+      ctx.strokeStyle = strokeStyle;
+      ctx.lineWidth = lineWidth;
+      ctx.stroke();
+
+      if(drawDot){
+        const mid = shortStart + diff/2;
+        const dx = center.x + radius * Math.cos(mid);
+        const dy = center.y + radius * Math.sin(mid);
+        ctx.beginPath();
+        ctx.arc(dx, dy, 5, 0, 2*Math.PI);
+        ctx.fillStyle = strokeStyle;
+        ctx.fill();
+      }
+    }
+
+    function drawAll(){
+      ctx.clearRect(0,0,canvas.width,canvas.height);
+
+      // Üçgen
+      ctx.beginPath();
+      ctx.moveTo(A.x, A.y);
+      ctx.lineTo(B.x, B.y);
+      ctx.lineTo(C.x, C.y);
+      ctx.closePath();
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = "#222";
+      ctx.stroke();
+
+      // Açıortay
+      ctx.beginPath();
+      ctx.moveTo(A.x, A.y);
+      ctx.lineTo(D.x, D.y);
+      ctx.strokeStyle = "red";
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      // Noktalar
+      function drawPoint(p, label){
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, 5, 0, 2*Math.PI);
+        ctx.fillStyle = "#000";
+        ctx.fill();
+        ctx.fillText(label, p.x + 8, p.y + 6);
+      }
+      drawPoint(A, "A");
+      drawPoint(B, "B");
+      drawPoint(C, "C");
+      drawPoint(D, "D");
+
+      // A açısındaki eş açı yayları
+      const angleAB = angleOf(A, B);
+      const angleAD = angleOf(A, D);
+      const angleAC = angleOf(A, C);
+      const equalColor = "#FF7F00";
+
+      drawAngleArc(A, angleAB, angleAD, 36, {strokeStyle: equalColor, drawDot: true});
+      drawAngleArc(A, angleAD, angleAC, 56, {strokeStyle: equalColor, drawDot: true});
+
+      ctx.fillStyle = equalColor;
+      ctx.fillRect(10, 10, 12, 12);
+      ctx.fillStyle = "#000";
+      ctx.fillText("— İşaretli yaylar eş açılardır", 30, 20);
+    }
+
+    drawAll();
+
+    // ---------- SERBEST ÇİZİM (Kullanıcıya izin veriyoruz) ----------
+    let drawing = false;
+    canvas.addEventListener("mousedown", (e)=>{
+      drawing = true;
+      ctx.beginPath();
+      ctx.moveTo(e.offsetX, e.offsetY);
+    });
+    canvas.addEventListener("mousemove", (e)=>{
+      if(drawing){
+        ctx.lineTo(e.offsetX, e.offsetY);
+        ctx.strokeStyle = "blue";
+        ctx.lineWidth = 2;
+        ctx.stroke();
+      }
+    });
+    canvas.addEventListener("mouseup", ()=> drawing = false);
+    canvas.addEventListener("mouseleave", ()=> drawing = false);
+    // ---- ARKA PLAN JAVASCRIPT İLE ----
+document.body.style.margin = "0";
+document.body.style.padding = "0";
+document.body.style.backgroundColor = "#b19cd9"; // açık mor
+document.body.style.backgroundImage = "url('https://upload.wikimedia.org/wikipedia/commons/thumb/1/17/Owl_face_icon.svg/1024px-Owl_face_icon.svg.png')";
+document.body.style.backgroundRepeat = "repeat";
+document.body.style.backgroundSize = "80px 80px";
+
+
+// ---- KARAKTER ve KONUŞMA BALONU ----
+const karakter = document.createElement("img");
+karakter.src = "baykus.png"; // buraya kendi seçtiğin karakterin yolunu koy
+karakter.style.position = "fixed";
+karakter.style.bottom = "20px";
+karakter.style.left = "20px";
+karakter.style.width = "170px";
+karakter.style.height = "370px";
+document.body.appendChild(karakter);
+
+
+const balon = document.createElement("div");
+balon.style.position = "fixed";
+balon.style.bottom = "390px";
+balon.style.left = "60px";
+balon.style.maxWidth = "220px";
+balon.style.padding = "10px";
+balon.style.background = "white";
+balon.style.border = "2px solid black";
+balon.style.borderRadius = "10px";
+balon.style.fontFamily = "Arial, sans-serif";
+balon.style.display = "none";
+document.body.appendChild(balon);
+
+
+// ---- İPUCU FONKSİYONU ----
+function ipucu(){
+if(typeof puan !== "undefined" && puan > 0){
+puan -= 30;
+document.getElementById("puan").innerText = puan;
+}
+balon.innerText = "D noktasından dik indirerek hipotenüsü AB çizgisine paralel bir DKC üçgeni çiziniz.";
+balon.style.display = "block";
+}
+  </script>
+</body>
+</html>
